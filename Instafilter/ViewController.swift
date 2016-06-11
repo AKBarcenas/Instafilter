@@ -16,25 +16,59 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     @IBOutlet weak var intensity: UISlider!
     // The current image
     var currentImage: UIImage!
+    // Handles rendering
+    var context: CIContext!
+    // The current filter that is being used.
+    var currentFilter: CIFilter!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         title = "Instafilter"
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .Add, target: self, action: #selector(importPicture))
+        
+        context = CIContext(options: nil)
+        currentFilter = CIFilter(name: "CISepiaTone")
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
+    
+    /*
+     * Function Name: changeFilter
+     * Parameters: sender - the button that called this function.
+     * Purpose: This method presents an alert to the user that allows them to choose the filter to
+     *   manipulate the image with.
+     * Return Value: None
+     */
+    
     @IBAction func changeFilter(sender: UIButton) {
+        let ac = UIAlertController(title: "Choose filter", message: nil, preferredStyle: .ActionSheet)
+        ac.addAction(UIAlertAction(title: "CIBumpDistortion", style: .Default, handler: setFilter))
+        ac.addAction(UIAlertAction(title: "CIGaussianBlur", style: .Default, handler: setFilter))
+        ac.addAction(UIAlertAction(title: "CIPixellate", style: .Default, handler: setFilter))
+        ac.addAction(UIAlertAction(title: "CISepiaTone", style: .Default, handler: setFilter))
+        ac.addAction(UIAlertAction(title: "CITwirlDistortion", style: .Default, handler: setFilter))
+        ac.addAction(UIAlertAction(title: "CIUnsharpMask", style: .Default, handler: setFilter))
+        ac.addAction(UIAlertAction(title: "CIVignette", style: .Default, handler: setFilter))
+        ac.addAction(UIAlertAction(title: "Cancel", style: .Cancel, handler: nil))
+        presentViewController(ac, animated: true, completion: nil)
     }
     
     @IBAction func save(sender: UIButton) {
     }
+    
+    /*
+     * Function Name: intensityChanged
+     * Parameters: sender - the slider that called this method.
+     * Purpose: This method applies processing to the picture every time the intensity on the slider changes.
+     * Return Value: None
+     */
+    
     @IBAction func intensityChanged(sender: UISlider) {
+        applyProcessing()
     }
     
     /*
@@ -74,6 +108,11 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         dismissViewControllerAnimated(true, completion: nil)
         
         currentImage = newImage
+        
+        let beginImage = CIImage(image: currentImage)
+        currentFilter.setValue(beginImage, forKey: kCIInputImageKey)
+        
+        applyProcessing()
     }
     
     /*
@@ -86,6 +125,37 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     
     func imagePickerControllerDidCancel(picker: UIImagePickerController) {
         dismissViewControllerAnimated(true, completion: nil)
+    }
+    
+    func applyProcessing() {
+        let inputKeys = currentFilter.inputKeys
+        
+        if inputKeys.contains(kCIInputIntensityKey) { currentFilter.setValue(intensity.value, forKey: kCIInputIntensityKey) }
+        if inputKeys.contains(kCIInputRadiusKey) { currentFilter.setValue(intensity.value * 200, forKey: kCIInputRadiusKey) }
+        if inputKeys.contains(kCIInputScaleKey) { currentFilter.setValue(intensity.value * 10, forKey: kCIInputScaleKey) }
+        if inputKeys.contains(kCIInputCenterKey) { currentFilter.setValue(CIVector(x: currentImage.size.width / 2, y: currentImage.size.height / 2), forKey: kCIInputCenterKey) }
+        
+        let cgimg = context.createCGImage(currentFilter.outputImage!, fromRect: currentFilter.outputImage!.extent)
+        let processedImage = UIImage(CGImage: cgimg)
+        
+        self.imageView.image = processedImage
+    }
+    
+    /*
+     * Function Name: setFilter
+     * Parameters: action - the action that is attatched to the
+     * Purpose: This method creates an image picker controller, sets the settings for that controller,
+     *   and presents that view controller.
+     * Return Value: None
+     */
+    
+    func setFilter(action: UIAlertAction!) {
+        currentFilter = CIFilter(name: action.title!)
+        
+        let beginImage = CIImage(image: currentImage)
+        currentFilter.setValue(beginImage, forKey: kCIInputImageKey)
+        
+        applyProcessing()
     }
 
 }
