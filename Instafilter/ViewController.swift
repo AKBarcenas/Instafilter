@@ -21,6 +21,13 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     // The current filter that is being used.
     var currentFilter: CIFilter!
     
+    /*
+     * Function Name: viewDidLoad
+     * Parameters: None
+     * Purpose: This method loads all the view for the application and sets the default filter and context.
+     * Return Value: None
+     */
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -57,7 +64,15 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         presentViewController(ac, animated: true, completion: nil)
     }
     
-    @IBAction func save(sender: UIButton) {
+    /*
+     * Function Name: save
+     * Parameters: sender - the button that called this function.
+     * Purpose: This method saves all of the changes that the user has made to the image with the current filter.
+     * Return Value: None
+     */
+    
+    @IBAction func save(sender: AnyObject) {
+        UIImageWriteToSavedPhotosAlbum(imageView.image!, self, "image:didFinishSavingWithError:contextInfo:", nil)
     }
     
     /*
@@ -127,6 +142,14 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         dismissViewControllerAnimated(true, completion: nil)
     }
     
+    /*
+     * Function Name: applyProcessing
+     * Parameters: None
+     * Purpose: This method applies processing to the picture using the current filter with the constraints
+     *   of the filter.
+     * Return Value: None
+     */
+    
     func applyProcessing() {
         let inputKeys = currentFilter.inputKeys
         
@@ -156,6 +179,28 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         currentFilter.setValue(beginImage, forKey: kCIInputImageKey)
         
         applyProcessing()
+    }
+    
+    /*
+     * Function Name: image
+     * Parameters: image - the image that this method was called by.
+     *   error - the error that possibly occured when saving this image.
+     *   contextInfo - information about the context that may have been used with this method call.
+     * Purpose: This method checks to see if an error occurred when the user saved their image and displays
+     *   a message to user letting them know if the save was successful or not.
+     * Return Value: None
+     */
+    
+    func image(image: UIImage, didFinishSavingWithError error: NSError?, contextInfo:UnsafePointer<Void>) {
+        if error == nil {
+            let ac = UIAlertController(title: "Saved!", message: "Your altered image has been saved to your photos.", preferredStyle: .Alert)
+            ac.addAction(UIAlertAction(title: "OK", style: .Default, handler: nil))
+            presentViewController(ac, animated: true, completion: nil)
+        } else {
+            let ac = UIAlertController(title: "Save error", message: error?.localizedDescription, preferredStyle: .Alert)
+            ac.addAction(UIAlertAction(title: "OK", style: .Default, handler: nil))
+            presentViewController(ac, animated: true, completion: nil)
+        }
     }
 
 }
